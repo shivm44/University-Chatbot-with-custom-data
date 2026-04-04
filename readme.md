@@ -1,7 +1,20 @@
 # 🎓 GGU CSIT Chatbot
 
-A smart, context-aware chatbot for **CSIT programs at Guru Ghasidas University (GGU)**.
+A smart, context-aware Helpdesk for **CSIT programs at Guru Ghasidas University (GGU)**.
 Built using **Python**, **NLTK**, and **fuzzy matching**, this chatbot provides detailed academic, faculty, and admission-related information.
+It also saves the chat data in a separate folder by asking the user whether they want to save the data or not.
+It uses Pure python code and currently it has limited data only about the department.
+
+## 🚀 - Ideas to implment later:
+
+  1). Creating webpage for this page.
+  2). Adding to whatsapp
+  3). Adding an free opem source AI api for enabling knowledegble ai chatbot.
+  4). Adding the data to University level.
+  5). Recreating the whole code in a more modular way with OOPs concepts instead of boolean logic.
+  6). Adding a feedback system for users to rate the helpfulness of responses, and using that data to improve the bot over time.
+  7). Recreating the whole .json data file by using binary trees for better data storage and retrieval.
+
 
 ---
 
