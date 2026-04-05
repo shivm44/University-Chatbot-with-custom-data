@@ -1,4 +1,3 @@
-
 # ============================================================
 #  GGU CSIT Chatbot — Guru Ghasidas Vishwavidyalaya, Bilaspur
 #  Department of Computer Science & Information Technology
@@ -61,13 +60,13 @@ INTENTS = {
     "greeting":    ["hi", "hello", "hey", "howdy", "greet", "morning", "afternoon", "evening", "namaste", "start"],
     "farewell":    ["bye", "goodbye", "exit", "quit", "later", "tata", "cya", "close", "end"],
     "thanks":      ["thanks", "thank", "appreciate", "grateful", "cheers", "helpful"],
-    "about":       ["about", "overview", "history", "established", "founded", "information",
-                    "info", "ggu", "ggv", "university", "vishwavidyalaya", "department", "csit"],
+    "about":       ["about", "overview", "history", "established", "founded", "what", "information",
+                    "info", "tell", "ggu", "ggv", "university", "vishwavidyalaya", "department", "csit"],
     "courses":     ["course", "program", "programme", "degree", "branch", "stream", "study",
                     "offer", "available", "subject", "list", "all"],
     "mca":         ["mca", "master", "application"],
-    "bca":         ["bca", "b.ca", "bachelor of computer"],
     "msc_cs":      ["msc", "m.sc"],
+    "msc_it":      ["mscit", "m.sc.it", "information technology", "msc information"],
     "integrated":  ["integrated", "bsc", "b.sc", "undergraduate", "five"],
     "phd":         ["phd", "ph.d", "doctoral", "doctorate", "vret"],
     "help":        ["help", "menu", "option", "command", "what can", "guide", "assist", "support"],
@@ -100,9 +99,9 @@ INTENTS = {
 
 SMALL_TALK = {
     "greeting": [
-        "Namaste! 🙏 I am CSITmitra, your friendly assistant at GGU CSIT Dept.\n"
+        "Namaste! 🙏  Welcome to the GGU CSIT Dept. chatbot.\n"
         "  Ask me about: courses · faculty · fees · admission · placement · research",
-        "Hello! I am CSITmitra, your friendly assistant at GGU CSIT Dept.\n"
+        "Hello! I'm the CSIT Dept. assistant at Guru Ghasidas Vishwavidyalaya.\n"
         "  What would you like to know?",
     ],
     "farewell": [
@@ -157,50 +156,17 @@ def detect_intent(tokens: list) -> tuple:
     matched_course = None
     if "mca" in lower or "master of computer application" in lower:
         matched_course = "MCA (Master of Computer Applications)"
-    elif "bca" in lower or ("computer" in lower and "application" in lower and "undergraduate" in lower):
-        matched_course = "BCA (Bachelor of Computer Applications)"
     elif "integrated" in lower or "bsc" in lower or "b.sc" in lower:
         matched_course = "Integrated UG/PG (B.Sc. + M.Sc.)"
+    elif "msc it" in lower or "m.sc it" in lower or ("information" in lower and "technology" in lower):
+        matched_course = "M.Sc. (Information Technology)"
     elif "msc cs" in lower or (("msc" in lower or "m.sc" in lower) and "computer" in lower):
         matched_course = "M.Sc. (Computer Science)"
     elif "phd" in lower or "ph.d" in lower or "doctoral" in lower:
         matched_course = "Ph.D. (Computer Science / IT)"
 
-    # Boost course intent when specific course detected so generic words don't win
-    _course_boost = {
-        "MCA (Master of Computer Applications)":  "mca",
-        "BCA (Bachelor of Computer Applications)": "bca",
-        "Integrated UG/PG (B.Sc. + M.Sc.)":       "integrated",
-        "M.Sc. (Information Technology)":          "msc_it",
-        "M.Sc. (Computer Science)":                "msc_cs",
-        "Ph.D. (Computer Science / IT)":           "phd",
-    }
-    if matched_course and matched_course in _course_boost:
-        scores[_course_boost[matched_course]] += 5
-
-    # If syllabus/semester keyword present alongside a course, keep course intent
-    # but signal via sub that only syllabus is wanted
-    syllabus_words = {"syllabus", "semester", "sem", "curriculum", "subject"}
-    want_syllabus = bool(syllabus_words & set(tokens)) and matched_course is not None
-
-    # If compare/vs keyword present with 2+ courses, let compare win
-    compare_words = {"vs", "versus", "compare", "comparison", "difference", "between"}
-    want_compare = bool(compare_words & set(tokens))
-    if want_compare:
-        scores["compare"] += 6
-
-    # "who is <name>" or "dr <name>" — boost professor directly
-    # Collect ALL professor-keyword tokens (handles full names like "akhilesh shrivas")
-    name_tokens = [t for t in tokens if t in INTENTS["professor"]]
-    if name_tokens:
-        matched_professor = " ".join(name_tokens)
-        scores["professor"] += 6
-
     best = max(scores, key=scores.get)
-    if want_syllabus:
-        sub = matched_course + ":syllabus"
-    else:
-        sub = matched_professor or matched_course
+    sub  = matched_professor or matched_course
     return (best if scores[best] > 0 else "unknown", sub)
 
 
@@ -226,7 +192,7 @@ def _log(user_msg: str, intent: str, bot_reply: str) -> None:
         "time":   datetime.datetime.now().strftime("%H:%M:%S"),
         "user":   user_msg,
         "intent": intent,
-        "CSITmitra":    bot_reply,
+        "bot":    bot_reply,
     })
 
 
@@ -237,8 +203,8 @@ def show_history() -> str:
     for entry in session_history:
         lines.append(f"  [{entry['turn']:02d}] {entry['time']}  You: {entry['user']}")
         # Show only first line of bot reply to keep it scannable
-        first_line = entry["CSITmitra"].splitlines()[0]
-        lines.append(f"       CSITmitra: {first_line}")
+        first_line = entry["bot"].splitlines()[0]
+        lines.append(f"       Bot: {first_line}")
     return "\n".join(lines)
 
 
@@ -276,7 +242,6 @@ def compare_courses(tokens: list) -> str | None:
     found = []
     lower = " ".join(tokens)
     mapping = {
-        "bca":        "BCA (Bachelor of Computer Applications)",
         "mca":        "MCA (Master of Computer Applications)",
         "msc cs":     "M.Sc. (Computer Science)",
         "msc it":     "M.Sc. (Information Technology)",
@@ -325,7 +290,7 @@ QUICK_COMMANDS = {
 }
 
 HELP_TEXT = textwrap.dedent("""\
-    🤖  GGU CSITmitra — Help
+    🤖  GGU CSIT Chatbot — Help
 
     NATURAL LANGUAGE  (just type, typos OK)
       'Tell me about MCA'
@@ -366,12 +331,12 @@ def save_log_to_file() -> str:
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         f"ggu_chat_log_{ts}.txt")
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(f"GGU CSITmitra — Session Log  ({ts})\n")
+        fh.write(f"GGU CSIT Chatbot — Session Log  ({ts})\n")
         fh.write("=" * 60 + "\n\n")
         for entry in session_history:
             fh.write(f"[{entry['turn']:02d}] {entry['time']}\n")
             fh.write(f"You : {entry['user']}\n")
-            fh.write(f"CSITmitra : {entry['CSITmitra']}\n\n")
+            fh.write(f"Bot : {entry['bot']}\n\n")
         fh.write(session_summary())
     return path
 
@@ -434,46 +399,19 @@ def build_response(intent: str, sub) -> str:
     # ── Specific course detail ──────────────────────────────────────────────
     course_map = {
         "mca":        "MCA (Master of Computer Applications)",
-        "bca":        "BCA (Bachelor of Computer Applications)",
         "msc_cs":     "M.Sc. (Computer Science)",
         "msc_it":     "M.Sc. (Information Technology)",
         "integrated": "Integrated UG/PG (B.Sc. + M.Sc.)",
         "phd":        "Ph.D. (Computer Science / IT)",
     }
-    # Only resolve course_key when the intent is actually a course detail request.
-    # Explicit intents (fees, admission, semester, faculty, etc.) must NOT be
-    # hijacked by the context fallback — they have their own handlers below.
-    _COURSE_ONLY_INTENTS = {"fees", "admission", "faculty", "professor", "placement", "scholarship",
-                            "research", "exam", "location", "contact", "help", "compare",
-                            "facilities", "semester", "about", "courses"}
     course_key = course_map.get(intent) or (sub if sub and sub in d["courses"] else None)
-    if not course_key and context["last_course"] and intent not in _COURSE_ONLY_INTENTS:
+    if not course_key and context["last_course"]:
         course_key = context["last_course"]
-
-    # Unpack ":syllabus" flag from sub
-    want_syllabus_only = isinstance(sub, str) and sub.endswith(":syllabus")
-    if want_syllabus_only:
-        sub = sub.replace(":syllabus", "")
-        course_key = course_map.get(intent) or (sub if sub and sub in d["courses"] else None)
-        if not course_key and context["last_course"]:
-            course_key = context["last_course"]
 
     if course_key and course_key in d["courses"]:
         context["last_course"]  = course_key
         context["last_intent"]  = "course_detail"
         c = d["courses"][course_key]
-
-        # ── Syllabus-only sub-mode ───────────────────────────────────────────
-        if want_syllabus_only:
-            if "semesters" in c:
-                lines = [f"📋  Semester-wise Subjects — {course_key}:\n"]
-                for sem, subjects in c["semesters"].items():
-                    lines.append(f"  {sem}:")
-                    for subj in subjects:
-                        lines.append(f"    - {subj}")
-                return "\n".join(lines)
-            return f"Semester details not available for {course_key}."
-
         lines = [f"📘  {course_key}\n"]
         lines.append(f"  Duration    : {c['duration']}")
         if "intake" in c:
@@ -514,18 +452,6 @@ def build_response(intent: str, sub) -> str:
     if intent == "fees":
         context["last_intent"] = "fees"
         fee = d["fees"]
-        ctx_course = context.get("last_course")
-        if ctx_course and ctx_course in d["courses"]:
-            c = d["courses"][ctx_course]
-            lines = [f"💰  Fees — {ctx_course}:\n"]
-            lines.append(f"  Per Semester : {c.get('fee_per_semester', 'N/A')}")
-            lines.append(f"  Total        : {c.get('total_approx_fee', 'N/A')}")
-            if "fellowship" in c:
-                lines.append(f"  Fellowship   : {c['fellowship']}")
-            lines.append(f"\n  🏠  Hostel: Boys — {fee['hostel']['boys']} | Girls — {fee['hostel']['girls']}")
-            lines.append(f"  ⚠️   {fee['note']}")
-            lines.append(f"\n  💡  Type '/fees' to see all courses fee structure.")
-            return "\n".join(lines)
         lines = ["💰  Fee Structure — CSIT Dept., GGV:\n"]
         for prog, info in d["courses"].items():
             lines.append(
@@ -545,15 +471,8 @@ def build_response(intent: str, sub) -> str:
     # ── Admission ───────────────────────────────────────────────────────────
     if intent == "admission":
         context["last_intent"] = "admission"
-        adm = d["admission_process"]
-        # If a course is in sub or context, show that course's admission only
-        ctx_course = (sub if sub and sub in adm else None) or                      (context["last_course"] if context["last_course"] and context["last_course"] in adm else None)
-        if ctx_course:
-            return (f"📝  Admission — {ctx_course}:\n\n"
-                    f"  {adm[ctx_course]}\n\n"
-                    f"  📌  Apply online at: www.ggu.ac.in (SAMARTH Portal)")
         lines = ["📝  Admission Process — CSIT Dept., GGV:\n"]
-        for prog, info in adm.items():
+        for prog, info in d["admission_process"].items():
             lines.append(f"  • {prog}\n    {info}")
         lines.append("\n  📌  Apply online at: www.ggu.ac.in (SAMARTH Portal)")
         return "\n".join(lines)
@@ -719,7 +638,7 @@ def chat():
         print(HELP_TEXT)
         return
 
-    title  = "  GGU CSIT Department CSITmitra  "
+    title  = "  GGU CSIT Department Chatbot  "
     sub    = "  Guru Ghasidas Vishwavidyalaya, Bilaspur  "
     border = "─" * max(len(title), len(sub))
 
@@ -751,32 +670,27 @@ def chat():
             if mapped == "help":
                 response = HELP_TEXT
                 _log(user_input, "help", response)
-                print(Fore.CYAN + f"\nCSITmitra  : {response}\n")
+                print(Fore.CYAN + f"\nBot  : {response}\n")
                 continue
 
             if mapped == "history":
                 response = show_history()
                 _log(user_input, "history", response)
-                print(Fore.CYAN + f"\nCSITmitra  : {response}\n")
+                print(Fore.CYAN + f"\nBot  : {response}\n")
                 continue
 
             if mapped == "summary":
                 response = session_summary()
                 _log(user_input, "summary", response)
-                print(Fore.CYAN + f"\nCSITmitra  : {response}\n")
+                print(Fore.CYAN + f"\nBot  : {response}\n")
                 continue
 
             # Treat slash-command as a natural-language intent
-            # Global commands (/fees, /courses etc.) ignore course context
-            _GLOBAL_CMDS = {"fees", "courses", "faculty", "admission", "placement",
-                            "scholarship", "research", "contact", "exam", "about"}
-            if mapped in _GLOBAL_CMDS:
-                context["last_course"] = None
             tokens          = preprocess(mapped)
             intent, sub_hit = detect_intent(tokens)
             response        = build_response(intent, sub_hit)
             _log(user_input, intent, response)
-            print(Fore.CYAN + f"\nCSITmitra  : {response}\n" + Style.RESET_ALL)
+            print(Fore.CYAN + f"\nBot  : {response}\n" + Style.RESET_ALL)
             continue
 
         # ── Course comparison  (e.g. "MCA vs Ph.D") ─────────────────────────
@@ -785,21 +699,21 @@ def chat():
             cmp_result = compare_courses(cmp_tokens)
             if cmp_result:
                 _log(user_input, "comparison", cmp_result)
-                print(Fore.CYAN + f"\nCSITmitra  : {cmp_result}\n" + Style.RESET_ALL)
+                print(Fore.CYAN + f"\nBot  : {cmp_result}\n" + Style.RESET_ALL)
                 continue
 
-        # ── Inline feedback  ("good", "bad", "wrong", …) ────────────────
+        # ── Inline feedback  ("good bot", "bad", "wrong", …) ────────────────
         low = user_input.lower()
-        if any(kw in low for kw in ("good", "great", "awesome", "perfect", "nice", "well done")):
+        if any(kw in low for kw in ("good bot", "great", "awesome", "perfect", "nice", "well done")):
             response = "😊  Thank you for the kind words! Anything else I can help with?"
             _log(user_input, "feedback_positive", response)
-            print(Fore.CYAN + f"\nCSITmitra  : {response}\n")
+            print(Fore.CYAN + f"\nBot  : {response}\n")
             continue
-        if any(kw in low for kw in ("wrong", "incorrect", "bad", "not helpful", "useless")):
+        if any(kw in low for kw in ("wrong", "incorrect", "bad bot", "not helpful", "useless")):
             response = ("😔  Sorry about that! Please rephrase your question or type /help\n"
                         "  to see example queries. Your feedback helps us improve.")
             _log(user_input, "feedback_negative", response)
-            print(Fore.CYAN + f"\nCSITmitra  : {response}\n")
+            print(Fore.CYAN + f"\nBot  : {response}\n")
             continue
 
         # ── Normal NLP pipeline ─────────────────────────────────────────────
@@ -814,7 +728,7 @@ def chat():
                 response = response + "\n" + hint
 
         _log(user_input, intent, response)
-        print(Fore.CYAN + f"\nCSITmitra  : {response}\n" + Style.RESET_ALL)
+        print(Fore.CYAN + f"\nBot  : {response}\n" + Style.RESET_ALL)
 
         # ── Exit ─────────────────────────────────────────────────────────────
         if intent == "farewell":
